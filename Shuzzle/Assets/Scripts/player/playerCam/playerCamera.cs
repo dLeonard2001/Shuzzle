@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Cinemachine;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -10,8 +11,8 @@ public class playerCamera : MonoBehaviour
 
     public float sensX;
     public float sensY;
-    public Transform orientation;
-    public Transform camHolder;
+    public Transform mainCam;
+    public CinemachineVirtualCamera cam;
     
     private float xRotation;
     private float yRotation;
@@ -42,8 +43,8 @@ public class playerCamera : MonoBehaviour
         
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
         
-        camHolder.rotation = Quaternion.Euler(xRotation, yRotation, 0);
-        orientation.rotation = Quaternion.Euler(0, yRotation, 0);
+        cam.transform.rotation = Quaternion.Euler(xRotation, yRotation, 0);
+        mainCam.rotation = Quaternion.Euler(0, yRotation, 0);
     }
 
     public void DoFov(float endValue)

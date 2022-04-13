@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cinemachine;
 using UnityEngine;
 
 public class playerMovement : MonoBehaviour
@@ -47,8 +48,7 @@ public class playerMovement : MonoBehaviour
     public float jumpCooldown;
     public float airMultiplier;
     private bool readyToJump;
-    
-    
+
     private float horizontalInput;
     private float verticalInput;
     private Vector3 moveDirection;
