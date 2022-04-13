@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Shuzzle/Shuzzle.unity
+    guid: edc0a86696064b848ae1f7d259f9c5a8
+  - enabled: 1
+    path: Assets/Scenes/Shuzzle/Controls.unity
+    guid: 4f4dd4c97ad4828468a14ba1e59e3bef
+  - enabled: 1
+    path: Assets/Scenes/Shuzzle/MainMenu.unity
+    guid: e8adae4eb2c962d4a8420e14813a699a
+  m_configObjects: {}
