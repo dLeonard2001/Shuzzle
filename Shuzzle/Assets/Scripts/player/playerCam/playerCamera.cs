@@ -1,9 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using Cinemachine;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 using DG.Tweening;
 
 public class playerCamera : MonoBehaviour
@@ -11,14 +7,14 @@ public class playerCamera : MonoBehaviour
 
     public float sensX;
     public float sensY;
-    public Transform mainCam;
-    public CinemachineVirtualCamera cam;
-    
-    private float xRotation;
-    private float yRotation;
+    public Transform cineMachineCamTarget;
+    public float RotationSpeed = 1.0f;
 
     private float mouseX;
     private float mouseY;
+
+    private float cineMachinePitch;
+    private float rotationVelocity;
     // Start is called before the first frame update
     void Start()
     {
@@ -27,7 +23,7 @@ public class playerCamera : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void LateUpdate()
     {
         if (Time.timeScale > 0)
         {
@@ -36,15 +32,20 @@ public class playerCamera : MonoBehaviour
         }
             
         // float mouseY= Input.GetAxisRaw("Mouse Y") * Time.fixedDeltaTime * sensY;
+        if (mouseX > 0f || mouseY > 0f)
+        {
+            // Debug.Log(mouseX + ":" + mouseY);
+            float deltaTimeMultiplier = 1.0f;
+            
+            cineMachinePitch += mouseY * RotationSpeed * deltaTimeMultiplier;
+            rotationVelocity = mouseX * RotationSpeed * deltaTimeMultiplier;
 
-        yRotation += mouseX;
+            cineMachinePitch = Mathf.Clamp(cineMachinePitch, -90f, 90f);
+            
+            cineMachineCamTarget.transform.localRotation = Quaternion.Euler(cineMachinePitch, 0f, 0f);
 
-        xRotation -= mouseY;
-        
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
-        
-        cam.transform.rotation = Quaternion.Euler(xRotation, yRotation, 0);
-        mainCam.rotation = Quaternion.Euler(0, yRotation, 0);
+            transform.Rotate(Vector3.up * rotationVelocity);
+        }
     }
 
     public void DoFov(float endValue)
