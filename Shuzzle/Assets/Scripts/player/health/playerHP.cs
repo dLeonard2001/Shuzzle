@@ -12,15 +12,13 @@ public class playerHP : MonoBehaviour
     public float health;
     public float damagedTimer;
 
-    [Header("References")] 
-    public playerCamera cam;
+    [Header("References")]
     public Image healthbar;
     public Button restartBTN;
     public TextMeshProUGUI deathMessage;
     public TextMeshProUGUI interaction;
     private RectTransform hpBar;
-    private List<float> healthBarToRestore = new List<float>();
-    
+
     // Start is called before the first frame update
     void Start()
     {
@@ -37,7 +35,7 @@ public class playerHP : MonoBehaviour
         
     }
 
-    private void takeDamage()
+    public void takeDamage()
     {
         health -= 20;
         if (health == 0)
@@ -56,16 +54,6 @@ public class playerHP : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.gameObject.tag == "Projectile")
-        {
-            Debug.Log("Player has been hit: " + health);
-            takeDamage();
-            Destroy(collision.gameObject);
-        }
-    }
-    
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.tag == "health_pickup")
@@ -75,14 +63,20 @@ public class playerHP : MonoBehaviour
         }
     }
 
+    
+
     private void healHP(float hpToRestore, GameObject other)
     {
         float timer = 5f;
         if (health < 100)
         {
             health += hpToRestore;
+            if (health > 100)
+            {
+                health = 100;
+            }
             healthbar.GetComponent<RectTransform>().localScale =
-                new Vector3(hpBar.localScale.x + 0.20f, hpBar.localScale.y, hpBar.localScale.z);
+                new Vector3(hpBar.localScale.x + hpToRestore/100, hpBar.localScale.y, hpBar.localScale.z);
             Destroy(other);
             while (timer > 0f)
             {

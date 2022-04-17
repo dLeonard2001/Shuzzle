@@ -54,16 +54,30 @@ public class InputManager : MonoBehaviour
 
     public bool PlayerJumped()
     {
-        return _playerControls.Player.Jump.triggered;
+        return _playerControls.Player.Jump.WasPressedThisFrame();
     }
     
     public bool DropItem()
     {
-        return _playerControls.Player.Drop.triggered;
+        return _playerControls.Player.Drop.WasPressedThisFrame();
     }
     
     public bool PickupItem()
     {
-        return _playerControls.Player.Pickup.triggered;
+        return _playerControls.Player.Pickup.WasPressedThisFrame();
+    }
+
+    public bool Reload()
+    {
+        return _playerControls.Player.Reload.WasPressedThisFrame();
+    }
+    
+    public bool Automatic()
+    {
+        return _playerControls.Player.Shoot.IsPressed();
+    }
+    public bool NotAutomatic()
+    {
+        return _playerControls.Player.Shoot.WasPressedThisFrame();
     }
 }

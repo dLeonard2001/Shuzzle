@@ -1,3 +1,5 @@
+using UnityEditor;
+using UnityEditor.Timeline;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -8,6 +10,8 @@ public class enemyAI : MonoBehaviour
     public LayerMask whatIsGround, whatIsPlayer;
     public float health;
     public GameObject healthbar;
+    public float forwardBulletForce;
+    public float upwardBulletForce;
 
     //Patroling
     public Vector3 walkPoint;
@@ -18,6 +22,7 @@ public class enemyAI : MonoBehaviour
     public float timeBetweenAttacks;
     bool alreadyAttacked;
     public GameObject projectile;
+    public Transform attackPoint;
 
     //States
     public float sightRange, attackRange;
@@ -25,7 +30,7 @@ public class enemyAI : MonoBehaviour
 
     private void Awake()
     {
-        player = GameObject.Find("PlayerObj").transform;
+        player = GameObject.Find("Player").transform;
         agent = GetComponent<NavMeshAgent>();
     }
 
@@ -81,9 +86,9 @@ public class enemyAI : MonoBehaviour
         if (!alreadyAttacked)
         {
             ///Attack code here
-            Rigidbody rb = Instantiate(projectile, transform.position, Quaternion.identity).GetComponent<Rigidbody>();
-            rb.AddForce(transform.forward * 32f, ForceMode.Impulse);
-            rb.AddForce(transform.up * 8f, ForceMode.Impulse);
+            Rigidbody rb = Instantiate(projectile, attackPoint.position, Quaternion.identity).GetComponent<Rigidbody>();
+            rb.AddForce(transform.forward * forwardBulletForce, ForceMode.Impulse);
+            rb.AddForce(transform.up * upwardBulletForce, ForceMode.Impulse);
             ///End of attack code
 
             alreadyAttacked = true;

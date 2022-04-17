@@ -9,6 +9,7 @@ TagManager:
   - enemy
   - player_projectile
   - health_pickup
+  - Wall
   layers:
   - Default
   - TransparentFX
@@ -24,7 +25,7 @@ TagManager:
   - whatIsGround
   - whatIsPlayer
   - whatIsWall
-  - 
+  - whatIsClimbable
   - 
   - 
   - 
