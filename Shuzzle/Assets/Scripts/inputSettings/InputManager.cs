@@ -8,14 +8,12 @@ public class InputManager : MonoBehaviour
 {
 
     private static InputManager _instance;
-    private bool state;
-
+    private PlayerControls _playerControls;
+    
     public static InputManager instance()
     {
         return _instance;
     }
-
-    private PlayerControls _playerControls;
 
     private void Awake()
     {
