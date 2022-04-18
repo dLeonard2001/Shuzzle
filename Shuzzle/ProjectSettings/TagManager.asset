@@ -10,6 +10,7 @@ TagManager:
   - player_projectile
   - health_pickup
   - Wall
+  - death_trigger
   layers:
   - Default
   - TransparentFX

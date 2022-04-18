@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using Cinemachine;
 using UnityEngine;
@@ -37,6 +38,7 @@ public class playerController : MonoBehaviour
     private Vector2 movement;
     private Vector3 move;
     private Vector3 playerVelocity;
+    private Vector3 origin;
     
     // Use timers to signal when a player should stop doing something
     [Header("Timers")]
@@ -105,6 +107,7 @@ public class playerController : MonoBehaviour
         maxSlideTimer = slideTimer;
         maxWallRunTimer = wallRunTimer;
         cam.m_Lens.FieldOfView = startFOV;
+        origin = transform.position;
     }
     void Update()
     {
@@ -152,6 +155,7 @@ public class playerController : MonoBehaviour
             {
                 playerVelocity = new Vector3(move.x, 0f, move.z);
                 playerVelocity = forceToApply;
+                wallRunTimer = maxWallRunTimer;
             }
             else if (wallRunTimer <= 0f)
             {
@@ -178,6 +182,7 @@ public class playerController : MonoBehaviour
             {
                 playerVelocity = new Vector3(move.x, 0f, move.z);
                 playerVelocity = forceToApply;
+                wallRunTimer = maxWallRunTimer;
             }
             else if (wallRunTimer <= 0f)
             {
@@ -222,7 +227,7 @@ public class playerController : MonoBehaviour
                 {
                     sliding = false;
                     sprinting = true;
-                    Debug.Log("Player should stop sliding");
+                    // Debug.Log("Player should stop sliding");
                     slideTimer = maxSlideTimer;
                     transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
                     cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, startFOV, 10 * Time.deltaTime);
@@ -306,6 +311,16 @@ public class playerController : MonoBehaviour
     private Vector3 GetSlopeMoveDirection()
     {
         return Vector3.ProjectOnPlane(move, slopeHit.normal).normalized;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "death_trigger")
+        {
+            Debug.Log("Player fell off the map");
+            transform.position = origin;
+        }
+            
     }
 
     #region MyRegion
