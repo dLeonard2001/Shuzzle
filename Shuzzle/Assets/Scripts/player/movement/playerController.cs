@@ -133,8 +133,18 @@ public class playerController : MonoBehaviour
 
         rightWall = Physics.Raycast(playerCameraRoot.position, Camera.main.transform.right, 
             out rightWallHit, 1, whatIsWall);
+        if (!rightWall)
+        {
+            rightWall = Physics.Raycast(playerCameraRoot.position, Camera.main.transform.forward, 
+                out rightWallHit, 1, whatIsWall);
+        }
         leftWall = Physics.Raycast(playerCameraRoot.position, -Camera.main.transform.right, 
             out leftWallHit, 1, whatIsWall);
+        if (!leftWall)
+        {
+            leftWall = Physics.Raycast(playerCameraRoot.position, -Camera.main.transform.forward, 
+                out leftWallHit, 1, whatIsWall);
+        }
 
         Vector3 wallNormal = rightWall ? rightWallHit.normal : leftWallHit.normal;
         Vector3 forceToApply = transform.up * 20 + wallNormal * 10;
@@ -223,7 +233,20 @@ public class playerController : MonoBehaviour
             playerVelocity = Vector3.down * 10f;
             if (!OnSlope() || move.y > -0.1f)
             {
-                if (slideTimer <= 0f)
+                // jumping out of a slide needs some tuning
+                if (_inputManager.PlayerJumped())
+                {
+                    playerVelocity.y = 0;
+                    playerVelocity.y = jumpHeight*2;
+                    playerSpeed = slideSpeed;
+                    sliding = false;
+                    transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
+                    controller.height = 2;
+                    while(cam.m_Lens.FieldOfView > 75)
+                    {
+                        cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, startFOV, 10 * Time.deltaTime);
+                    }
+                }else if (slideTimer <= 0f)
                 {
                     sliding = false;
                     sprinting = true;
@@ -345,7 +368,6 @@ public class playerController : MonoBehaviour
         {
             walking = false;
             crouching = true;
-            controller.height = 1;
             controller.height = 1;
         }else if (context.canceled)
         {
