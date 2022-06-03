@@ -24,6 +24,7 @@ public class playerController : MonoBehaviour
     private float playerSpeed; // desiredMoveSpeed
     private float moveSpeed;
     private RaycastHit slopeHit;
+    private bool weaponEquipped;
     
     // Store if our player is on the ground
     private bool groundedPlayer;
@@ -56,6 +57,7 @@ public class playerController : MonoBehaviour
     [Header("Camera Settings")] 
     public float startFOV;
     public float maxFOV;
+    private int gunZoom;
     
     // Gameobject references
     [Header("References")]
@@ -67,7 +69,7 @@ public class playerController : MonoBehaviour
     private CharacterController controller;
     private InputManager _inputManager;
     private Transform cameraTransform;
-    
+
     // Wall Hit Data
     private RaycastHit rightWallHit;
     private RaycastHit leftWallHit;
@@ -80,6 +82,8 @@ public class playerController : MonoBehaviour
     // Values to store the origin of transforms
     private float startYScale;
     private float crouchYScale;
+
+    private bool pause;
 
     // private IEnumerator SmoothlyLerpMoveSpeed()
     // {
@@ -98,6 +102,7 @@ public class playerController : MonoBehaviour
 
     private void Start()
     {
+        pause = false;
         controller = GetComponent<CharacterController>();
         _inputManager = InputManager.instance();
         cameraTransform = Camera.main.transform;
@@ -111,6 +116,25 @@ public class playerController : MonoBehaviour
     }
     void Update()
     {
+        if (_inputManager.pauseGame())
+        {
+            if (pause)
+            {
+                pause = false;
+            }
+            else
+            {
+                pause = true;
+            }
+        }else if (pause)
+        {
+            return;
+        }
+
+        if (_inputManager.AimDownSight() && weaponEquipped)
+        {
+            cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, gunZoom, 20 * Time.deltaTime);
+        }
         movement = _inputManager.GetPlayerMovement();
         move = new Vector3();
 
@@ -121,7 +145,7 @@ public class playerController : MonoBehaviour
             playerVelocity.y = 0f;
             playerVelocity.x = 0f;
             wallRunTimer = maxWallRunTimer;
-            if (!sliding && !rightWall && !leftWall)
+            if (!sliding && !rightWall && !leftWall && !_inputManager.AimDownSight())
             {
                 cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, startFOV, 10 * Time.deltaTime);
             }
@@ -399,6 +423,12 @@ public class playerController : MonoBehaviour
             transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
             controller.height = 2;
         }
+    }
+
+    public void setGunZoom(int zoomFOV, bool b)
+    {
+        gunZoom = zoomFOV;
+        weaponEquipped = b;
     }
     
 

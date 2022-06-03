@@ -125,6 +125,24 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Throwables"",
+                    ""type"": ""Button"",
+                    ""id"": ""e5345cb7-d632-4610-bb01-76e5aa68c485"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Menu Pause"",
+                    ""type"": ""Button"",
+                    ""id"": ""166c1b5b-d886-455c-9849-7a664706a436"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -292,6 +310,28 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                     ""action"": ""Aim"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8c50ceb1-00b4-4195-a337-ee024c12fb28"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Throwables"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f66500ab-a106-47b0-9162-cbe3f05468e0"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Menu Pause"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -311,6 +351,8 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         m_Player_Shoot = m_Player.FindAction("Shoot", throwIfNotFound: true);
         m_Player_Aim = m_Player.FindAction("Aim", throwIfNotFound: true);
         m_Player_Reload = m_Player.FindAction("Reload", throwIfNotFound: true);
+        m_Player_Throwables = m_Player.FindAction("Throwables", throwIfNotFound: true);
+        m_Player_MenuPause = m_Player.FindAction("Menu Pause", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -381,6 +423,8 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Shoot;
     private readonly InputAction m_Player_Aim;
     private readonly InputAction m_Player_Reload;
+    private readonly InputAction m_Player_Throwables;
+    private readonly InputAction m_Player_MenuPause;
     public struct PlayerActions
     {
         private @PlayerControls m_Wrapper;
@@ -396,6 +440,8 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         public InputAction @Shoot => m_Wrapper.m_Player_Shoot;
         public InputAction @Aim => m_Wrapper.m_Player_Aim;
         public InputAction @Reload => m_Wrapper.m_Player_Reload;
+        public InputAction @Throwables => m_Wrapper.m_Player_Throwables;
+        public InputAction @MenuPause => m_Wrapper.m_Player_MenuPause;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -438,6 +484,12 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                 @Reload.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnReload;
                 @Reload.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnReload;
                 @Reload.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnReload;
+                @Throwables.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnThrowables;
+                @Throwables.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnThrowables;
+                @Throwables.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnThrowables;
+                @MenuPause.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnMenuPause;
+                @MenuPause.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnMenuPause;
+                @MenuPause.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnMenuPause;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -475,6 +527,12 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                 @Reload.started += instance.OnReload;
                 @Reload.performed += instance.OnReload;
                 @Reload.canceled += instance.OnReload;
+                @Throwables.started += instance.OnThrowables;
+                @Throwables.performed += instance.OnThrowables;
+                @Throwables.canceled += instance.OnThrowables;
+                @MenuPause.started += instance.OnMenuPause;
+                @MenuPause.performed += instance.OnMenuPause;
+                @MenuPause.canceled += instance.OnMenuPause;
             }
         }
     }
@@ -492,5 +550,7 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         void OnShoot(InputAction.CallbackContext context);
         void OnAim(InputAction.CallbackContext context);
         void OnReload(InputAction.CallbackContext context);
+        void OnThrowables(InputAction.CallbackContext context);
+        void OnMenuPause(InputAction.CallbackContext context);
     }
 }

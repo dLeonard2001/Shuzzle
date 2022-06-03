@@ -5,9 +5,9 @@ public class CineMachinePOVExtension : CinemachineExtension
     [SerializeField] 
     private float clampAngle = 90f;
     [SerializeField] 
-    private float horizontalSpeed = 10f;
+    private float horizontalSpeed = 5f;
     [SerializeField] 
-    private float verticalSpeed = 10f;
+    private float verticalSpeed = 5f;
     [SerializeField] 
     public bool tilt;
         

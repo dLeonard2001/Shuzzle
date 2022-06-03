@@ -11,6 +11,8 @@ TagManager:
   - health_pickup
   - Wall
   - death_trigger
+  - weapon
+  - loot
   layers:
   - Default
   - TransparentFX

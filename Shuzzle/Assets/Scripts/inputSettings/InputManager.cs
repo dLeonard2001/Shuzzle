@@ -65,6 +65,16 @@ public class InputManager : MonoBehaviour
         return _playerControls.Player.Pickup.WasPressedThisFrame();
     }
 
+    public bool Throwable()
+    {
+        return _playerControls.Player.Throwables.WasPressedThisFrame();
+    }
+
+    public bool pauseGame()
+    {
+        return _playerControls.Player.MenuPause.WasPressedThisFrame();
+    }
+
     public bool Reload()
     {
         return _playerControls.Player.Reload.WasPressedThisFrame();
@@ -77,5 +87,10 @@ public class InputManager : MonoBehaviour
     public bool NotAutomatic()
     {
         return _playerControls.Player.Shoot.WasPressedThisFrame();
+    }
+
+    public bool AimDownSight()
+    {
+        return _playerControls.Player.Aim.IsPressed();
     }
 }

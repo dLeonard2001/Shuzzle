@@ -1,9 +1,5 @@
-using System;
 using UnityEngine;
 using TMPro;
-using Cinemachine;
-using UnityEditor.Timeline;
-using UnityEngine.InputSystem;
 using Random = UnityEngine.Random;
 
 public class gunScript : MonoBehaviour
@@ -21,9 +17,9 @@ public class gunScript : MonoBehaviour
     public float bulletsPerTap;
     public bool allowButtonHold;
     public int gunDamage;
+    public int gunZoom;
 
     int bulletsLeft, bulletsShot;
-    private bool readyToshoot = true;
 
     //Recoil
     // public Rigidbody playerRb;
@@ -37,44 +33,63 @@ public class gunScript : MonoBehaviour
     public Camera fpsCam;
     public Transform attackPoint;
     public Transform gunContainer;
-    private InputManager _inputManager;
+    public playerController player;
+    private InputManager inputManager;
+    private bool equipped;
 
-    //Graphics
+    [Header("Graphics")]
     public GameObject muzzleFlash;
     public TextMeshProUGUI ammunitionDisplay;
 
     //bug fixing :D
     public bool allowInvoke = true;
 
+    private bool pause;
+
     private void Awake()
     {
         //make sure magazine is full
         bulletsLeft = magazineSize;
         readyToShoot = true;
-        
     }
 
     private void Start()
     {
-        _inputManager = InputManager.instance();
+        pause = false;
+        inputManager = InputManager.instance();
     }
 
     private void Update()
     {
+        if (inputManager.pauseGame())
+        {
+            if (pause)
+            {
+                pause = false;
+            }
+            else
+            {
+                pause = true;
+            }
+        }else if (pause)
+        {
+            return;
+        }
         MyInput();
 
         //Set ammo display, if it exists :D
         if (ammunitionDisplay != null)
-            ammunitionDisplay.SetText(bulletsLeft / bulletsPerTap + " / " + magazineSize / bulletsPerTap);
+            ammunitionDisplay.SetText(bulletsLeft / bulletsPerTap + " / " + magazineSize / bulletsPerTap + " :" + transform.name);
     }
     private void MyInput()
     {
+        player.setGunZoom(gunZoom, equipped);
         //Check if allowed to hold down button and take corresponding input
-        if (allowButtonHold) shooting = _inputManager.Automatic();
-        else shooting = _inputManager.NotAutomatic();
+        if (allowButtonHold) shooting = inputManager.Automatic();
+        else shooting = inputManager.NotAutomatic();
 
         //Reloading 
-        if (_inputManager.Reload() && bulletsLeft < magazineSize && !reloading) 
+        if (inputManager.Reload() && bulletsLeft < magazineSize && !reloading) 
             Reload();
         //Reload automatically when trying to shoot without ammo
         if (readyToShoot && shooting && !reloading && bulletsLeft <= 0)
@@ -139,8 +154,8 @@ public class gunScript : MonoBehaviour
             Invoke("ResetShot", timeBetweenShooting);
             allowInvoke = false;
 
-            //Add recoil to player (should only be called once)
-            // playerRb.AddForce(-directionWithSpread.normalized * recoilForce, ForceMode.Impulse);
+            // Add recoil to player (should only be called once)
+            //  playerRb.AddForce(-directionWithSpread.normalized * recoilForce, ForceMode.Impulse);
         }
 
         //if more than one bulletsPerTap make sure to repeat shoot function
@@ -164,5 +179,10 @@ public class gunScript : MonoBehaviour
         //Fill magazine
         bulletsLeft = magazineSize;
         reloading = false;
+    }
+
+    public void setEquipStatus(bool b)
+    {
+        equipped = b;
     }
 }
