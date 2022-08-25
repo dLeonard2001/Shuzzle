@@ -1,16 +1,16 @@
 using System;
 using System.Collections;
 using Cinemachine;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
-[RequireComponent(typeof(CharacterController))]
 public class playerController : MonoBehaviour
 {
     // =============== Notes - To-Do =============
-    
+        // 1. Change entire movement from CharacterController -> Rigidbody 
     // ===========================================
     
     [Header("Player Speed")]
@@ -20,15 +20,13 @@ public class playerController : MonoBehaviour
     public float wallRunSpeed;
     public float crouchSpeed;
     public float jumpHeight;
+    public float wallJumpSpeed;
     private float lastDesiredMoveSpeed;
     private float playerSpeed; // desiredMoveSpeed
     private float moveSpeed;
     private RaycastHit slopeHit;
     private bool weaponEquipped;
-    
-    // Store if our player is on the ground
-    private bool groundedPlayer;
-    
+
     // Booleans to store what movement state the player is in
     private bool walking;
     private bool sliding;
@@ -62,26 +60,28 @@ public class playerController : MonoBehaviour
     // Gameobject references
     [Header("References")]
     public CinemachineVirtualCamera cam;
+    public Camera mainCamera;
     public LayerMask whatIsGround;
     public LayerMask whatIsWall;
     public LayerMask whatIsClimbable;
     public Transform playerCameraRoot;
-    private CharacterController controller;
-    private InputManager _inputManager;
-    private Transform cameraTransform;
+    private Rigidbody RB;
+    private InputManager inputManager;
 
     // Wall Hit Data
     private RaycastHit rightWallHit;
     private RaycastHit leftWallHit;
+    private RaycastHit groundHit;
     
     // Booleans to check what wall(s) we are touching
     private bool rightWall;
     private bool leftWall;
     private bool frontWall;
+    private bool onGround;
+    private bool readyToJump;
 
     // Values to store the origin of transforms
     private float startYScale;
-    private float crouchYScale;
 
     private bool pause;
 
@@ -103,20 +103,19 @@ public class playerController : MonoBehaviour
     private void Start()
     {
         pause = false;
-        controller = GetComponent<CharacterController>();
-        _inputManager = InputManager.instance();
-        cameraTransform = Camera.main.transform;
+        RB = GetComponent<Rigidbody>();
+        inputManager = InputManager.instance();
         startYScale = transform.localScale.y;
-        crouchYScale = transform.localScale.y * 0.5f;
         walking = true;
         maxSlideTimer = slideTimer;
         maxWallRunTimer = wallRunTimer;
         cam.m_Lens.FieldOfView = startFOV;
         origin = transform.position;
+        readyToJump = false;
     }
     void Update()
     {
-        if (_inputManager.pauseGame())
+        if (inputManager.pauseGame())
         {
             if (pause)
             {
@@ -130,219 +129,126 @@ public class playerController : MonoBehaviour
         {
             return;
         }
+        
+        movement = inputManager.GetPlayerMovement();
 
-        if (_inputManager.AimDownSight() && weaponEquipped)
+        if (inputManager.AimDownSight() && weaponEquipped)
         {
             cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, gunZoom, 20 * Time.deltaTime);
         }
-        movement = _inputManager.GetPlayerMovement();
-        move = new Vector3();
-
-        groundedPlayer = controller.isGrounded;
-        if (groundedPlayer)
+        else
         {
-            playerVelocity.z = 0f;
-            playerVelocity.y = 0f;
-            playerVelocity.x = 0f;
-            wallRunTimer = maxWallRunTimer;
-            if (!sliding && !rightWall && !leftWall && !_inputManager.AimDownSight())
-            {
-                cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, startFOV, 10 * Time.deltaTime);
-            }
+            cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, startFOV, 20 * Time.deltaTime);
         }
 
-        move.x = movement.x;
-        move.z = movement.y;
-        move = cameraTransform.forward * move.z + cameraTransform.right * move.x;
-
-        rightWall = Physics.Raycast(playerCameraRoot.position, Camera.main.transform.right, 
+        rightWall = Physics.Raycast(playerCameraRoot.position, mainCamera.transform.right, 
             out rightWallHit, 1, whatIsWall);
         if (!rightWall)
         {
-            rightWall = Physics.Raycast(playerCameraRoot.position, Camera.main.transform.forward, 
+            rightWall = Physics.Raycast(playerCameraRoot.position, mainCamera.transform.forward, 
                 out rightWallHit, 1, whatIsWall);
         }
-        leftWall = Physics.Raycast(playerCameraRoot.position, -Camera.main.transform.right, 
+        leftWall = Physics.Raycast(playerCameraRoot.position, -mainCamera.transform.right, 
             out leftWallHit, 1, whatIsWall);
         if (!leftWall)
         {
-            leftWall = Physics.Raycast(playerCameraRoot.position, -Camera.main.transform.forward, 
+            leftWall = Physics.Raycast(playerCameraRoot.position, -mainCamera.transform.forward, 
                 out leftWallHit, 1, whatIsWall);
         }
 
-        Vector3 wallNormal = rightWall ? rightWallHit.normal : leftWallHit.normal;
-        Vector3 forceToApply = transform.up * 20 + wallNormal * 10;
+        onGround = Physics.Raycast(transform.position, Vector3.down, out groundHit, 
+            2);
 
-        if (!rightWall && !leftWall && !frontWall)
+        if (onGround)
         {
-            playerVelocity.y -= -Physics.gravity.y * Time.deltaTime;
+            wallRunTimer = maxWallRunTimer;
         }
-        else
+
+        if (inputManager.PlayerJumped() && (onGround || rightWall || leftWall))
         {
-            playerVelocity.y = 0;
+            readyToJump = true;
         }
         
-        // ======= Wall Movement =======
-        if (rightWall && !groundedPlayer)
-        {
-            if (_inputManager.PlayerJumped())
-            {
-                playerVelocity = new Vector3(move.x, 0f, move.z);
-                playerVelocity = forceToApply;
-                wallRunTimer = maxWallRunTimer;
-            }
-            else if (wallRunTimer <= 0f)
-            {
-                // Debug.Log("Slowly kicking player off of a wall");
-                playerVelocity.y += -2;
-            }
-            else
-            {
-                if (sprinting)
-                {
-                    playerVelocity.y += 1.5f;
-                }else if (crouching)
-                {
-                    playerVelocity.y -= 1.5f;
-                }
-                playerSpeed = wallRunSpeed;
-                cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, maxFOV, 10 * Time.deltaTime);
-                wallRunTimer -= Time.deltaTime;
-            }
-        }
-        else if (leftWall && !groundedPlayer)
-        {
-            if (_inputManager.PlayerJumped())
-            {
-                playerVelocity = new Vector3(move.x, 0f, move.z);
-                playerVelocity = forceToApply;
-                wallRunTimer = maxWallRunTimer;
-            }
-            else if (wallRunTimer <= 0f)
-            {
-                // Debug.Log("Slowly kicking player off of a wall");
-                playerVelocity.y += -2;
-            }
-            else
-            {
-                if (sprinting)
-                {
-                    playerVelocity.y += 1.5f;
-                }else if (crouching)
-                {
-                    playerVelocity.y -= 1.5f;
-                }
-                playerSpeed = wallRunSpeed;
-                cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, maxFOV, 10 * Time.deltaTime);
-                wallRunTimer -= Time.deltaTime;
-            }
-        }
+    }
 
-        // ======= Ground Movement =======
-        if (walking && !rightWall && !leftWall)
-        {
-            playerSpeed = walkSpeed;
-        }
-        else if (sprinting && !crouching && !sliding && !rightWall && !leftWall)
-        {
-            playerSpeed = sprintSpeed;
-        }
-        else if (crouching && !rightWall && !leftWall)
-        {
-            playerSpeed = crouchSpeed;
-            transform.localScale = new Vector3(transform.localScale.x, crouchYScale, transform.localScale.z);
-        }
-        else if (sliding && sprinting && !rightWall && !leftWall)
-        {
-            playerVelocity = Vector3.down * 10f;
-            if (!OnSlope() || move.y > -0.1f)
+    private void FixedUpdate()
+    {
+        playerVelocity = transform.forward * movement.y + transform.right * movement.x;
+        transform.rotation = Quaternion.Euler(0f, mainCamera.transform.eulerAngles.y, 0f);
+        // player is on a wall, left or right
+        // player is running
+            // player is sliding
+            // player is jumping
+        // player is walking
+            // player is jumping
+            if (rightWall)
             {
-                // jumping out of a slide needs some tuning
-                if (_inputManager.PlayerJumped())
+                wallRunTimer -= Time.deltaTime;
+                moveSpeed = wallRunSpeed;
+                RB.useGravity = false;
+                RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Acceleration);
+            }else if (leftWall && wallRunTimer >= 0)
+            {
+                wallRunTimer -= Time.deltaTime;
+                moveSpeed = wallRunSpeed;
+                RB.useGravity = false;
+                RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Acceleration);
+            }else if(sprinting)
+            {
+                if (sliding && slideTimer >= 0)
                 {
-                    playerVelocity.y = 0;
-                    playerVelocity.y = jumpHeight*2;
-                    playerSpeed = slideSpeed;
-                    sliding = false;
-                    transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
-                    controller.height = 2;
-                    while(cam.m_Lens.FieldOfView > 75)
-                    {
-                        cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, startFOV, 10 * Time.deltaTime);
-                    }
-                }else if (slideTimer <= 0f)
-                {
-                    sliding = false;
-                    sprinting = true;
-                    // Debug.Log("Player should stop sliding");
-                    slideTimer = maxSlideTimer;
-                    transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
-                    cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, startFOV, 10 * Time.deltaTime);
-                    controller.height = 2;
+                    Debug.Log("sliding");
+                    moveSpeed = slideSpeed;
+                    slideTimer -= Time.deltaTime;
+                    transform.localScale = new Vector3(transform.localScale.x, startYScale*0.5f, transform.localScale.z);
                 }
                 else
                 {
-                    cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, maxFOV, 10 * Time.deltaTime);
-                    slideTimer -= Time.deltaTime;
-                    playerSpeed = slideSpeed;
-                    transform.localScale = new Vector3(transform.localScale.x, crouchYScale, transform.localScale.z);
-                    controller.height = 1;
+                    moveSpeed = sprintSpeed;
+                    transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
+                }
+            }else if (crouching)
+            {
+                moveSpeed = crouchSpeed;
+                transform.localScale = new Vector3(transform.localScale.x, startYScale*0.5f, transform.localScale.z);
+            }else if (walking)
+            {
+                moveSpeed = walkSpeed;
+            }
+
+            if (!rightWall && !leftWall || wallRunTimer <= 0)
+            {
+                RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Acceleration); 
+                RB.useGravity = true;
+            }
+
+            if (readyToJump)
+            {
+                if (rightWall)
+                {
+                    WallJump();
+                }else if (leftWall)
+                {
+                    WallJump();
+                }else
+                {
+                    RB.AddForce(new Vector3(RB.velocity.x,jumpHeight, RB.velocity.z), ForceMode.Impulse);
+                    readyToJump = false;
                 }
             }
-            else
-            {
-                // Debug.Log("Sliding down a slope");
-                move += GetSlopeMoveDirection();
-                transform.localScale = new Vector3(transform.localScale.x, crouchYScale, transform.localScale.z);
-                controller.height = 1;
-            }
-            
-            // // Debug.Log(Mathf.Abs(playerSpeed - lastDesiredMoveSpeed) + " speed difference");
-            // if (Mathf.Abs(playerSpeed - lastDesiredMoveSpeed) > 4 && moveSpeed != 0)
-            // {
-            //     Debug.Log(playerSpeed + " : " + lastDesiredMoveSpeed);
-            //     Debug.Log("Starting Movement Coroutine");
-            //     StopAllCoroutines();
-            //     StartCoroutine(SmoothlyLerpMoveSpeed());
-            // }
-            // else
-            // {
-            //     moveSpeed = playerSpeed;
-            // }
-            // lastDesiredMoveSpeed = playerSpeed;
-        }
-        // ===============================
-        
-        move.x *= playerSpeed;
-        move.z *= playerSpeed;
-        
-        
-        if (_inputManager.PlayerJumped() && groundedPlayer)
-        {
-            playerVelocity.y = jumpHeight;
-        }
 
-        // if GetSlopeMoveDirection
-            // has a -y value, then we are going down a slope
-        // else
-            // +y value then we are going up a slope
-        if (OnSlope())
-        {
-            move += playerVelocity;
-            move += Vector3.down * controller.height / 2 * slopeForce;
-            controller.Move(move * Time.deltaTime);
-        }
-        else
-        {
-            move += playerVelocity;
-            controller.Move(move * Time.deltaTime);
-        }
-        // Debug.Log("PlayerVelocity is: " + controller.velocity.magnitude);
+            Vector3 flatVel = new Vector3(RB.velocity.x, 0f, RB.velocity.z);
+            
+            if (RB.velocity.magnitude > moveSpeed)
+            {
+                Vector3 limitedVel = flatVel.normalized * moveSpeed;
+                RB.velocity = new Vector3(limitedVel.x, RB.velocity.y, limitedVel.z);
+            }
     }
 
     private bool OnSlope()
     {
-        if (_inputManager.PlayerJumped())
+        if (inputManager.PlayerJumped())
             return false;
         if (Physics.Raycast(transform.position, Vector3.down, out slopeHit, 2))
         {
@@ -355,19 +261,36 @@ public class playerController : MonoBehaviour
         return false;
     }
 
-    private Vector3 GetSlopeMoveDirection()
+    private void WallJump()
     {
-        return Vector3.ProjectOnPlane(move, slopeHit.normal).normalized;
+        readyToJump = false;
+        moveSpeed = wallJumpSpeed;
+        Vector3 wallNormal = rightWall ? rightWallHit.normal : leftWallHit.normal;
+
+        Vector3 forceToApply = transform.up * 8 + wallNormal * 25;
+
+        RB.velocity = new Vector3(RB.velocity.x, 0f, RB.velocity.z);
+        RB.AddForce(forceToApply, ForceMode.Impulse);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.tag == "death_trigger")
+        if (other.CompareTag("death_trigger"))
         {
             Debug.Log("Player fell off the map");
             transform.position = origin;
         }
-            
+    }
+    
+    private Vector3 GetSlopeMoveDirection()
+    {
+        return Vector3.ProjectOnPlane(move, slopeHit.normal).normalized;
+    }
+    
+    // Debugging 
+    private void OnDrawGizmos()
+    {
+        
     }
 
     #region MyRegion
@@ -392,13 +315,11 @@ public class playerController : MonoBehaviour
         {
             walking = false;
             crouching = true;
-            controller.height = 1;
         }else if (context.canceled)
         {
             walking = true;
             crouching = false;
             transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
-            controller.height = 2;
         }
     }
 
@@ -421,7 +342,6 @@ public class playerController : MonoBehaviour
             sliding = false;
             slideTimer = maxSlideTimer;
             transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
-            controller.height = 2;
         }
     }
 

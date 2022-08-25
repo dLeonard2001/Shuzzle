@@ -13,6 +13,10 @@ TagManager:
   - death_trigger
   - weapon
   - loot
+  - kunai
+  - grenade
+  - loot_kunai
+  - loot_grenade
   layers:
   - Default
   - TransparentFX

@@ -17,6 +17,7 @@ public class grenadeProjectile : MonoBehaviour
 
         rb.isKinematic = true;
         
+        Destroy(gameObject, 10);
         // transform.SetParent(collision.transform);
     }
 }

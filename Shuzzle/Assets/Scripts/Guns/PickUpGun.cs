@@ -1,17 +1,23 @@
 using System;
 using System.Collections;
+using System.Threading;
 using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class PickUpGun : MonoBehaviour
 {
+    
+    // Bug:
+        // sometimes drops both weapons, when dropping a weapon/when near another one
+        
+    
     [Header("References")]
     public gunScript gun;
     public Rigidbody rb;
+    public Rigidbody playerRB;
     public CapsuleCollider coll;
     public TextMeshProUGUI weaponEquipped;
-    public TextMeshProUGUI playerInteraction;
     public Transform player, gunContainer, fpsCam;
     public Transform gunTransform;
     public Camera cam;
@@ -22,6 +28,7 @@ public class PickUpGun : MonoBehaviour
     public float pickUpRange;
     public float dropForwardForce, dropUpwardForce;
     public bool equipped;
+    private Vector3 distanceToPlayer;
     
     private static bool _slotFull;
     private float pickUpTimer;
@@ -38,6 +45,7 @@ public class PickUpGun : MonoBehaviour
             gun.enabled = false;
             rb.isKinematic = false;
             coll.isTrigger = false;
+            _slotFull = false;
             gun.setEquipStatus(false);
         }
         if (equipped)
@@ -66,41 +74,35 @@ public class PickUpGun : MonoBehaviour
             return;
         }
         
-        
-
         Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0)); 
         RaycastHit hit;
         Physics.Raycast(ray, out hit);
+        
+        if (hit.transform != null)
+        {
+            distanceToPlayer = player.position - transform.position;
 
-        Vector3 distanceToPlayer = player.position - transform.position;
-        if (!equipped && distanceToPlayer.magnitude <= automaticPickUpRange && !_slotFull && canPickUp)
-        {
-            canPickUp = false;
-            pickUpTimer = 2f;
-            PickUp();
-            playerInteraction.text = "";
-        }else if (!equipped && distanceToPlayer.magnitude <= pickUpRange && inputManager.PickupItem() && !_slotFull && hit.transform.name == transform.name)
-        { // Picking up a weapon
-            canPickUp = false;
-            PickUp();
-            playerInteraction.text = "";
-        }
-        else if(!equipped && distanceToPlayer.magnitude <= pickUpRange && !_slotFull && hit.transform.CompareTag("weapon"))
-        {
-            playerInteraction.text = "Press E to pickup " + hit.transform.name;
-        }
-        else
-        {
-            
-            if(!canPickUp && !equipped)
+            if (!equipped && distanceToPlayer.magnitude <= automaticPickUpRange && !_slotFull && canPickUp)
             {
-                pickUpTimer -= Time.deltaTime;
+                canPickUp = false;
+                pickUpTimer = 2f;
+                PickUp();
+            }else if (!equipped && distanceToPlayer.magnitude <= pickUpRange && inputManager.PickupItem() && !_slotFull && hit.transform.name == transform.name)
+            { // Picking up a weapon
+                canPickUp = false;
+                PickUp();
             }
-            if (pickUpTimer <= 0)
+            else
             {
-                canPickUp = true;
+                if(!canPickUp && !equipped)
+                {
+                    pickUpTimer -= Time.deltaTime;
+                }
+                if (pickUpTimer <= 0)
+                {
+                    canPickUp = true;
+                }
             }
-            playerInteraction.text = "";
         }
         
         if (equipped && inputManager.DropItem())
@@ -136,7 +138,7 @@ public class PickUpGun : MonoBehaviour
         rb.isKinematic = false;
         coll.isTrigger = false;
         
-        rb.velocity = GameObject.Find("Player").GetComponent<CharacterController>().velocity;
+        rb.velocity = playerRB.velocity;
         
         
         rb.AddForce(fpsCam.forward * dropForwardForce, ForceMode.Impulse); 
@@ -148,5 +150,10 @@ public class PickUpGun : MonoBehaviour
 
         gunTransform = gameObject.transform;
         gun.enabled = false;
+    }
+
+    public bool WithinRange()
+    {
+        return distanceToPlayer.magnitude <= pickUpRange;
     }
 }

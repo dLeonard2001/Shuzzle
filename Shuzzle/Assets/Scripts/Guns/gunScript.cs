@@ -14,19 +14,21 @@ public class gunScript : MonoBehaviour
     public float reloadTime; 
     public float timeBetweenShots;
     public int magazineSize;
-    public float bulletsPerTap;
-    public bool allowButtonHold;
+    public int bulletsPerTap;
     public int gunDamage;
     public int gunZoom;
+    public int ammoSupply;
+    public bool allowButtonHold;
+    private int maxAmmo;
 
-    int bulletsLeft, bulletsShot;
+    private int bulletsLeft, bulletsShot;
 
     //Recoil
-    // public Rigidbody playerRb;
+    // public CharacterController playerRB;
     // public float recoilForce;
 
     //bools
-    bool shooting, readyToShoot, reloading;
+    private bool shooting, readyToShoot, reloading;
     
     [Header("References")]
     public GameObject bullet;
@@ -46,17 +48,14 @@ public class gunScript : MonoBehaviour
 
     private bool pause;
 
-    private void Awake()
-    {
-        //make sure magazine is full
-        bulletsLeft = magazineSize;
-        readyToShoot = true;
-    }
-
     private void Start()
     {
+        bulletsLeft = magazineSize;
+        readyToShoot = true;
+        bulletsShot = 0;
         pause = false;
         inputManager = InputManager.instance();
+        maxAmmo = ammoSupply;
     }
 
     private void Update()
@@ -79,7 +78,7 @@ public class gunScript : MonoBehaviour
 
         //Set ammo display, if it exists :D
         if (ammunitionDisplay != null)
-            ammunitionDisplay.SetText(bulletsLeft / bulletsPerTap + " / " + magazineSize / bulletsPerTap + " :" + transform.name);
+            ammunitionDisplay.SetText(bulletsLeft / bulletsPerTap + " - " + ammoSupply + " :" + transform.name);
     }
     private void MyInput()
     {
@@ -92,15 +91,12 @@ public class gunScript : MonoBehaviour
         if (inputManager.Reload() && bulletsLeft < magazineSize && !reloading) 
             Reload();
         //Reload automatically when trying to shoot without ammo
-        if (readyToShoot && shooting && !reloading && bulletsLeft <= 0)
+        if (readyToShoot && shooting && !reloading && bulletsLeft <= 0 && ammoSupply > 0)
             Reload();
         
         //Shooting
         if (readyToShoot && shooting && !reloading && bulletsLeft > 0)
         {
-            //Set bullets shot to 0
-            bulletsShot = 0;
-        
             Shoot();
         }
     }
@@ -155,7 +151,7 @@ public class gunScript : MonoBehaviour
             allowInvoke = false;
 
             // Add recoil to player (should only be called once)
-            //  playerRb.AddForce(-directionWithSpread.normalized * recoilForce, ForceMode.Impulse);
+            // playerRB.attachedRigidbody.AddForce(-directionWithSpread.normalized * recoilForce, ForceMode.Impulse);
         }
 
         //if more than one bulletsPerTap make sure to repeat shoot function
@@ -172,17 +168,33 @@ public class gunScript : MonoBehaviour
     private void Reload()
     {
         reloading = true;
-        Invoke("ReloadFinished", reloadTime); //Invoke ReloadFinished function with your reloadTime as delay
+        Invoke(nameof(ReloadFinished), reloadTime); //Invoke ReloadFinished function with your reloadTime as delay
     }
     private void ReloadFinished()
     {
         //Fill magazine
-        bulletsLeft = magazineSize;
+
+        if (ammoSupply - bulletsShot < 0)
+        {
+            bulletsLeft = ammoSupply + bulletsLeft;
+            ammoSupply = 0;
+        }
+        else
+        {
+            ammoSupply -= bulletsShot;
+            bulletsShot = 0;
+            bulletsLeft = magazineSize;
+        }
         reloading = false;
     }
 
     public void setEquipStatus(bool b)
     {
         equipped = b;
+    }
+    
+    public int GetMaxAmmoSupply()
+    {
+        return maxAmmo;
     }
 }

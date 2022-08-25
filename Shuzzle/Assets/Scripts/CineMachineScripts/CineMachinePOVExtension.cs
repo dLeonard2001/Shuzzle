@@ -10,7 +10,6 @@ public class CineMachinePOVExtension : CinemachineExtension
     private float verticalSpeed = 5f;
     [SerializeField] 
     public bool tilt;
-        
 
     private InputManager inputManager;
     private Vector3 startingRotation;
