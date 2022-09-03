@@ -1,6 +1,4 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class Detector : MonoBehaviour
@@ -8,6 +6,8 @@ public class Detector : MonoBehaviour
 
     [Header("Block Config")] 
     public int blockNumber;
+    public TextMeshPro numberDisplay;
+    public TextMeshPro hintDisplay;
     private bool alreadyHit;
 
     [Header("References")] 
@@ -16,6 +16,8 @@ public class Detector : MonoBehaviour
     private void Start()
     {
         alreadyHit = false;
+        numberDisplay.text = puzzleManager.blockCombination[blockNumber - 1].ToString();
+        hintDisplay.text = blockNumber + ". " + puzzleManager.PuzzleHintCombinations(puzzleManager.blockCombination[blockNumber - 1]);
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -27,7 +29,7 @@ public class Detector : MonoBehaviour
         else
         {
             Debug.Log("Block: " + blockNumber + " hit");
-            puzzleManager.PlayerInput(blockNumber);
+            puzzleManager.PlayerInput(puzzleManager.blockCombination[blockNumber - 1]);
         }
     }
 

@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -12,11 +14,11 @@ public class puzzleManager : MonoBehaviour
     [Header("Puzzle 1")] 
     public List<Detector> detectorList;
     public List<GameObject> list;
+    public List<int> blockCombination;
     private List<int> playerInputCombination;
-    private List<int> blockCombination;
     private int totalObjects;
 
-    private void Start()
+    private void Awake()
     {
         totalObjects = list.Count;
         playerInputCombination = new List<int>();
@@ -50,7 +52,7 @@ public class puzzleManager : MonoBehaviour
             if(blockCombination.Count == totalObjects) 
                 break;
             
-            int num = Random.Range(0, 4);
+            int num = Random.Range(0, 9);
             
             if (blockCombination.Contains(num))
             {
@@ -60,6 +62,7 @@ public class puzzleManager : MonoBehaviour
             if (!blockCombination.Contains(num))
             {
                 blockCombination.Add(num);
+                Debug.Log(num);
             }
         }
     }
@@ -68,9 +71,10 @@ public class puzzleManager : MonoBehaviour
     {
         for (int i = 0; i < totalObjects; i++)
         {
+            Debug.Log("blockCombo" + blockCombination[i] + ": playerInput: " + playerInputCombination[i] );
             if (blockCombination[i] == playerInputCombination[i])
             {
-                // do nothing
+                
             }
             else
             {
@@ -94,5 +98,26 @@ public class puzzleManager : MonoBehaviour
             detectorList[i].ResetBlock();
         }
         playerInputCombination.Clear();
+    }
+
+    public String PuzzleHintCombinations(int i)
+    {
+        Hashtable table = new Hashtable()
+        {
+            {1, "The new year starts on this day"},
+            {2, "... heads are better than one"},
+            {3, "33% can also be said as 1/..."},
+            {4, "4"},
+            {5, "5"},
+            {6, "6"},
+            {7, "7"},
+            {8, "8"},
+            {9, "9"},
+            {0, "0"}
+        };
+
+        string str = (string) table[i];
+
+        return str;
     }
 }

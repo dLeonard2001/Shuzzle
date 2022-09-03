@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
+using System.Diagnostics;
 using Cinemachine;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Debug = UnityEngine.Debug;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
@@ -197,7 +199,6 @@ public class playerController : MonoBehaviour
             {
                 if (sliding && slideTimer >= 0)
                 {
-                    Debug.Log("sliding");
                     moveSpeed = slideSpeed;
                     slideTimer -= Time.deltaTime;
                     transform.localScale = new Vector3(transform.localScale.x, startYScale*0.5f, transform.localScale.z);
