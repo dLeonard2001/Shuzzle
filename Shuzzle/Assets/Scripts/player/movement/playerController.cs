@@ -30,6 +30,14 @@ public class playerController : MonoBehaviour
     private bool weaponEquipped;
 
     // Booleans to store what movement state the player is in
+    private enum playerState
+    {
+        walking,
+        sprinting,
+    }
+
+    private playerState currentState;
+    
     private bool walking;
     private bool sliding;
     private bool sprinting;
@@ -108,6 +116,7 @@ public class playerController : MonoBehaviour
         RB = GetComponent<Rigidbody>();
         inputManager = InputManager.instance();
         startYScale = transform.localScale.y;
+        currentState = playerState.walking;
         walking = true;
         maxSlideTimer = slideTimer;
         maxWallRunTimer = wallRunTimer;
@@ -183,7 +192,7 @@ public class playerController : MonoBehaviour
             // player is jumping
         // player is walking
             // player is jumping
-            if (rightWall)
+            if (rightWall && wallRunTimer >= 0)
             {
                 wallRunTimer -= Time.deltaTime;
                 moveSpeed = wallRunSpeed;
@@ -195,7 +204,7 @@ public class playerController : MonoBehaviour
                 moveSpeed = wallRunSpeed;
                 RB.useGravity = false;
                 RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Acceleration);
-            }else if(sprinting)
+            }else if(currentState == playerState.sprinting)
             {
                 if (sliding && slideTimer >= 0)
                 {
@@ -212,7 +221,7 @@ public class playerController : MonoBehaviour
             {
                 moveSpeed = crouchSpeed;
                 transform.localScale = new Vector3(transform.localScale.x, startYScale*0.5f, transform.localScale.z);
-            }else if (walking)
+            }else if (currentState == playerState.walking)
             {
                 moveSpeed = walkSpeed;
             }
@@ -261,6 +270,11 @@ public class playerController : MonoBehaviour
         }
         return false;
     }
+    
+    private Vector3 GetSlopeMoveDirection()
+    {
+        return Vector3.ProjectOnPlane(move, slopeHit.normal).normalized;
+    }
 
     private void WallJump()
     {
@@ -282,11 +296,17 @@ public class playerController : MonoBehaviour
             transform.position = origin;
         }
     }
-    
-    private Vector3 GetSlopeMoveDirection()
+
+    private void stateHandling()
     {
-        return Vector3.ProjectOnPlane(move, slopeHit.normal).normalized;
+        switch (currentState)
+        {
+            case playerState.walking:
+                break;
+        }
     }
+    
+    
     
     // Debugging 
     private void OnDrawGizmos()
@@ -300,12 +320,10 @@ public class playerController : MonoBehaviour
     {
         if (context.started)
         {
-            walking = false;
-            sprinting = true;
+            currentState = playerState.sprinting;
         }else if (context.canceled)
         {
-            walking = true;
-            sprinting = false;
+            currentState = playerState.walking;
         }
     }
     
@@ -316,9 +334,10 @@ public class playerController : MonoBehaviour
         {
             walking = false;
             crouching = true;
+
         }else if (context.canceled)
         {
-            walking = true;
+            currentState = playerState.walking;
             crouching = false;
             transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
         }
@@ -330,6 +349,7 @@ public class playerController : MonoBehaviour
     {
         if (context.started )
         {
+            // currentState = playerState.sliding;
             walking = false;
             sliding = true;
             
@@ -337,8 +357,11 @@ public class playerController : MonoBehaviour
         {
             if (!sprinting)
             {
+                currentState = playerState.walking;
                 walking = true;
             }
+            currentState = playerState.sprinting;
+            
             cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, startFOV, 10 * Time.deltaTime);
             sliding = false;
             slideTimer = maxSlideTimer;
