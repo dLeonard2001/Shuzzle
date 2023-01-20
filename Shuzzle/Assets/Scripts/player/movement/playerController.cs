@@ -1,8 +1,4 @@
-using System;
-using System.Collections;
-using System.Diagnostics;
 using Cinemachine;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Debug = UnityEngine.Debug;
