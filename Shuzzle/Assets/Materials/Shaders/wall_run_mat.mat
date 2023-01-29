@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: wall_run_mat
-  m_Shader: {fileID: -6465566751694194690, guid: 460b365c1b8040c41a81175de335b8e2,
+  m_Shader: {fileID: -6465566751694194690, guid: f808e9822e4bf4d48a1c24c9512d54ad,
     type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
@@ -89,12 +89,14 @@ Material:
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
+    - _DistanceFromPlayer: -15.583496
     - _DstBlend: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _Metallic: 0
     - _Mode: 0
+    - _NoiseScale: 25
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _QueueControl: 0
