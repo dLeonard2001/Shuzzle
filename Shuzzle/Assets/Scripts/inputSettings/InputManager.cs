@@ -54,6 +54,11 @@ public class InputManager : MonoBehaviour
     {
         return _playerControls.Player.Jump.WasPressedThisFrame();
     }
+
+    public bool Sprint()
+    {
+        return _playerControls.Player.Sprint.IsPressed();
+    }
     
     public bool DropItem()
     {

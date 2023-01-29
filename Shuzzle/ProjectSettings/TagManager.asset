@@ -33,8 +33,8 @@ TagManager:
   - whatIsPlayer
   - whatIsWall
   - whatIsClimbable
-  - 
-  - 
+  - player
+  - point
   - 
   - 
   - 
