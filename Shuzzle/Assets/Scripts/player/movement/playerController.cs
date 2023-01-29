@@ -14,6 +14,7 @@ public class playerController : MonoBehaviour
     [Header("Player Speed")]
     public float walkSpeed;
     public float sprintSpeed;
+    public float airSpeed;
     public float slideSpeed;
     public float wallRunSpeed;
     public float crouchSpeed;
@@ -28,12 +29,12 @@ public class playerController : MonoBehaviour
     // Booleans to store what movement state the player is in
     private enum playerState
     {
-        walking,
-        sprinting,
+        ground,
+        air,
     }
 
     private playerState currentState;
-    
+
     private bool walking;
     private bool sliding;
     private bool sprinting;
@@ -41,8 +42,9 @@ public class playerController : MonoBehaviour
     
     // Vectors to store our player's input/direction
     private Vector2 movement;
-    private Vector3 move;
     private Vector3 playerVelocity;
+    
+    // Save our starting position, to be able to reset the player position on death/respawn
     private Vector3 origin;
     
     // Use timers to signal when a player should stop doing something
@@ -82,7 +84,6 @@ public class playerController : MonoBehaviour
     // Booleans to check what wall(s) we are touching
     private bool rightWall;
     private bool leftWall;
-    private bool frontWall;
     private bool onGround;
     private bool readyToJump;
 
@@ -91,52 +92,27 @@ public class playerController : MonoBehaviour
 
     private bool pause;
 
-    // private IEnumerator SmoothlyLerpMoveSpeed()
-    // {
-    //     float time = 0;
-    //     float difference = Mathf.Abs(playerSpeed - moveSpeed);
-    //     float startValue = moveSpeed;
-    //
-    //     while (time < difference)
-    //     {
-    //         moveSpeed = Mathf.Lerp(startValue, playerSpeed, time / difference);
-    //         time += Time.deltaTime;
-    //         yield return null;
-    //     }
-    //     moveSpeed = playerSpeed;
-    // }
-
+    // setup
     private void Start()
     {
         pause = false;
         RB = GetComponent<Rigidbody>();
         inputManager = InputManager.instance();
+        
         startYScale = transform.localScale.y;
-        currentState = playerState.walking;
-        walking = true;
+        currentState = playerState.ground;
+        
         maxSlideTimer = slideTimer;
         maxWallRunTimer = wallRunTimer;
+        
         cam.m_Lens.FieldOfView = startFOV;
         origin = transform.position;
         readyToJump = false;
     }
+    
+    // update function to setup variables and input for later use in fixedUpdate
     void Update()
     {
-        if (inputManager.pauseGame())
-        {
-            if (pause)
-            {
-                pause = false;
-            }
-            else
-            {
-                pause = true;
-            }
-        }else if (pause)
-        {
-            return;
-        }
-        
         movement = inputManager.GetPlayerMovement();
 
         if (inputManager.AimDownSight() && weaponEquipped)
@@ -164,16 +140,18 @@ public class playerController : MonoBehaviour
         }
 
         onGround = Physics.Raycast(transform.position, Vector3.down, out groundHit, 
-            2);
+            1.25f, whatIsGround);
 
         if (onGround)
         {
             wallRunTimer = maxWallRunTimer;
+            currentState = playerState.ground;
         }
 
         if (inputManager.PlayerJumped() && (onGround || rightWall || leftWall))
         {
             readyToJump = true;
+            Debug.Log(readyToJump);
         }
         
     }
@@ -181,75 +159,152 @@ public class playerController : MonoBehaviour
     private void FixedUpdate()
     {
         playerVelocity = transform.forward * movement.y + transform.right * movement.x;
+
+        // rotate the in fixedUpdate to remove jitter/rigid movement on objects
         transform.rotation = Quaternion.Euler(0f, mainCamera.transform.eulerAngles.y, 0f);
-        // player is on a wall, left or right
-        // player is running
-            // player is sliding
-            // player is jumping
-        // player is walking
-            // player is jumping
-            if (rightWall && wallRunTimer >= 0)
-            {
-                wallRunTimer -= Time.deltaTime;
-                moveSpeed = wallRunSpeed;
-                RB.useGravity = false;
-                RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Acceleration);
-            }else if (leftWall && wallRunTimer >= 0)
-            {
-                wallRunTimer -= Time.deltaTime;
-                moveSpeed = wallRunSpeed;
-                RB.useGravity = false;
-                RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Acceleration);
-            }else if(currentState == playerState.sprinting)
-            {
-                if (sliding && slideTimer >= 0)
+        
+        // Shooting will be possibly whenever
+        switch (currentState)
+        {
+            case playerState.ground:
+                // sprinting
+                    // must sprint to slide OR have enough speed to slide
+                if (inputManager.Sprint())
                 {
-                    moveSpeed = slideSpeed;
-                    slideTimer -= Time.deltaTime;
-                    transform.localScale = new Vector3(transform.localScale.x, startYScale*0.5f, transform.localScale.z);
+                    moveSpeed = sprintSpeed;
+                }else // walking
+                {
+                    moveSpeed = walkSpeed;
+                }
+                
+                if (readyToJump) // jump
+                {
+                    moveSpeed = jumpHeight + sprintSpeed - walkSpeed;
+                    RB.AddForce(new Vector3(RB.velocity.x, jumpHeight, RB.velocity.z/2) * 2, ForceMode.Impulse);
+                
+                    readyToJump = false;
+                    Debug.Log("jumping");
+                    currentState = playerState.air;
                 }
                 else
                 {
-                    moveSpeed = sprintSpeed;
-                    transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
+                    RB.AddForce(playerVelocity * moveSpeed, ForceMode.Impulse);
                 }
-            }else if (crouching)
-            {
-                moveSpeed = crouchSpeed;
-                transform.localScale = new Vector3(transform.localScale.x, startYScale*0.5f, transform.localScale.z);
-            }else if (currentState == playerState.walking)
-            {
-                moveSpeed = walkSpeed;
-            }
 
-            if (!rightWall && !leftWall || wallRunTimer <= 0)
-            {
-                RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Acceleration); 
-                RB.useGravity = true;
-            }
-
-            if (readyToJump)
-            {
-                if (rightWall)
+                break;
+            case playerState.air:
+                // wallRun
+                // wall Jump
+                if (rightWall || leftWall && wallRunTimer > 0) // able to wall run
                 {
-                    WallJump();
-                }else if (leftWall)
-                {
-                    WallJump();
-                }else
-                {
-                    RB.AddForce(new Vector3(RB.velocity.x,jumpHeight, RB.velocity.z), ForceMode.Impulse);
-                    readyToJump = false;
+                    Vector3 wallNormal = new Vector3();
+                    if (rightWall)
+                        wallNormal = rightWallHit.normal;
+                    if (leftWall)
+                        wallNormal = leftWallHit.normal;
+                    
+                    if (readyToJump)
+                    {
+                        WallJump(wallNormal);
+                    }
+                    else
+                    {
+                        // RB.velocity = new Vector3(RB.velocity.x, 0f, RB.velocity.z);
+                        
+                        // Debug.Log(wall);
+                        if (wallRunTimer <= 0)
+                        {
+                            RB.useGravity = true;
+                            moveSpeed = airSpeed;
+                        }
+                        else
+                        {
+                            RB.useGravity = false;
+                            moveSpeed = wallRunSpeed + sprintSpeed - walkSpeed;
+                            wallRunTimer -= Time.deltaTime;
+                        
+                            RB.AddForce(playerVelocity * wallRunSpeed * 4.5f, ForceMode.Acceleration);
+                        } 
+                    }
                 }
-            }
+                else
+                {
+                    RB.useGravity = true;
+                    RB.AddForce(playerVelocity * airSpeed + Vector3.down, ForceMode.Force);
+                }
+                
+                break;
+            // 
+        }
 
-            Vector3 flatVel = new Vector3(RB.velocity.x, 0f, RB.velocity.z);
-            
-            if (RB.velocity.magnitude > moveSpeed)
-            {
-                Vector3 limitedVel = flatVel.normalized * moveSpeed;
-                RB.velocity = new Vector3(limitedVel.x, RB.velocity.y, limitedVel.z);
-            }
+        // // player is on a wall, left or right
+        // // player is running
+        //     // player is sliding
+        //     // player is jumping
+        // // player is walking
+        //     // player is jumping
+        //     if (rightWall && wallRunTimer >= 0)
+        //     {
+        //         wallRunTimer -= Time.deltaTime;
+        //         moveSpeed = wallRunSpeed;
+        //         RB.useGravity = false;
+        //         RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Force);
+        //     }else if (leftWall && wallRunTimer >= 0)
+        //     {
+        //         wallRunTimer -= Time.deltaTime;
+        //         moveSpeed = wallRunSpeed;
+        //         RB.useGravity = false;
+        //         RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Force);
+        //     }else if(currentState == playerState.sprinting)
+        //     {
+        //         // if (sliding && slideTimer >= 0)
+        //         // {
+        //         //     moveSpeed = slideSpeed;
+        //         //     slideTimer -= Time.deltaTime;
+        //         //     transform.localScale = new Vector3(transform.localScale.x, startYScale*0.5f, transform.localScale.z);
+        //         // }
+        //         // else
+        //         // {
+        //         //     moveSpeed = sprintSpeed;
+        //         //     transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
+        //         // }
+        //     }else if (crouching)
+        //     {
+        //         moveSpeed = crouchSpeed;
+        //         transform.localScale = new Vector3(transform.localScale.x, startYScale*0.5f, transform.localScale.z);
+        //     }else if (currentState == playerState.walking)
+        //     {
+        //         moveSpeed = walkSpeed;
+        //     }
+        //
+        //     if (!rightWall && !leftWall || wallRunTimer <= 0)
+        //     {
+        //         RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Force); 
+        //         RB.useGravity = true;
+        //     }
+        //
+        //     if (readyToJump)
+        //     {
+        //         if (rightWall)
+        //         {
+        //             WallJump();
+        //         }else if (leftWall)
+        //         {
+        //             WallJump();
+        //         }else
+        //         {
+        //             RB.AddForce(new Vector3(RB.velocity.x,jumpHeight, RB.velocity.z), ForceMode.Impulse);
+        //             readyToJump = false;
+        //         }
+        //     }
+        //
+        
+        
+        if (RB.velocity.magnitude > moveSpeed)
+        {
+            // Debug.Log(moveSpeed);
+            RB.velocity = Vector3.ClampMagnitude(RB.velocity, moveSpeed);
+        }
     }
 
     private bool OnSlope()
@@ -267,21 +322,26 @@ public class playerController : MonoBehaviour
         return false;
     }
     
-    private Vector3 GetSlopeMoveDirection()
-    {
-        return Vector3.ProjectOnPlane(move, slopeHit.normal).normalized;
-    }
+    // slope math
+    // private Vector3 GetSlopeMoveDirection()
+    // {
+    //     return Vector3.ProjectOnPlane(move, slopeHit.normal).normalized;
+    // }
 
-    private void WallJump()
+    private void WallJump(Vector3 wallNormal)
     {
         readyToJump = false;
-        moveSpeed = wallJumpSpeed;
-        Vector3 wallNormal = rightWall ? rightWallHit.normal : leftWallHit.normal;
-
-        Vector3 forceToApply = transform.up * 8 + wallNormal * 25;
+        
+        // our force to apply based on the wall 
+        Vector3 forceToApply = wallNormal * 15 + transform.forward * 15 + Vector3.up * 20;
+        
+        Debug.Log(forceToApply);
 
         RB.velocity = new Vector3(RB.velocity.x, 0f, RB.velocity.z);
         RB.AddForce(forceToApply, ForceMode.Impulse);
+
+        // reset our wall run timer, ONLY if we jumped off of a wall
+        wallRunTimer = maxWallRunTimer;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -293,76 +353,10 @@ public class playerController : MonoBehaviour
         }
     }
 
-    private void stateHandling()
-    {
-        switch (currentState)
-        {
-            case playerState.walking:
-                break;
-        }
-    }
-    
-    
-    
     // Debugging 
     private void OnDrawGizmos()
     {
         
-    }
-
-    #region MyRegion
-    // Sprinting
-    public void PlayerSprint(InputAction.CallbackContext context)
-    {
-        if (context.started)
-        {
-            currentState = playerState.sprinting;
-        }else if (context.canceled)
-        {
-            currentState = playerState.walking;
-        }
-    }
-    
-    // Crouching
-    public void PlayerCrouch(InputAction.CallbackContext context)
-    {
-        if (context.started)
-        {
-            walking = false;
-            crouching = true;
-
-        }else if (context.canceled)
-        {
-            currentState = playerState.walking;
-            crouching = false;
-            transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
-        }
-    }
-
-    // Sliding
-    // Must be sprinting to slide ( checked in Update() )
-    public void PlayerSlide(InputAction.CallbackContext context)
-    {
-        if (context.started )
-        {
-            // currentState = playerState.sliding;
-            walking = false;
-            sliding = true;
-            
-        }else if (context.canceled)
-        {
-            if (!sprinting)
-            {
-                currentState = playerState.walking;
-                walking = true;
-            }
-            currentState = playerState.sprinting;
-            
-            cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, startFOV, 10 * Time.deltaTime);
-            sliding = false;
-            slideTimer = maxSlideTimer;
-            transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
-        }
     }
 
     public void setGunZoom(int zoomFOV, bool b)
@@ -370,7 +364,4 @@ public class playerController : MonoBehaviour
         gunZoom = zoomFOV;
         weaponEquipped = b;
     }
-    
-
-    #endregion
 }
