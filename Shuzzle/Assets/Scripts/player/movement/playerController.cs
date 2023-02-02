@@ -1,7 +1,9 @@
+using System;
 using Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Debug = UnityEngine.Debug;
+using Random = UnityEngine.Random;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
@@ -10,7 +12,6 @@ public class playerController : MonoBehaviour
     // =============== Notes - To-Do =============
         // 1. Change entire movement from CharacterController -> Rigidbody 
     // ===========================================
-    
     [Header("Player Speed")]
     public float walkSpeed;
     public float sprintSpeed;
@@ -113,7 +114,13 @@ public class playerController : MonoBehaviour
     // update function to setup variables and input for later use in fixedUpdate
     void Update()
     {
-        movement = inputManager.GetPlayerMovement();
+        // Random.Range(min, max);
+            // Random.Range(inclusive, exclusive);
+            // Random.Range(0, 1) = Random.Range(0, 0);
+            // exclusive = n -1
+            // Random.Range(k, n - 1);
+
+            movement = inputManager.GetPlayerMovement();
 
         if (inputManager.AimDownSight() && weaponEquipped)
         {
@@ -151,7 +158,6 @@ public class playerController : MonoBehaviour
         if (inputManager.PlayerJumped() && (onGround || rightWall || leftWall))
         {
             readyToJump = true;
-            Debug.Log(readyToJump);
         }
         
     }
@@ -183,7 +189,7 @@ public class playerController : MonoBehaviour
                     RB.AddForce(new Vector3(RB.velocity.x, jumpHeight, RB.velocity.z/2) * 2, ForceMode.Impulse);
                 
                     readyToJump = false;
-                    Debug.Log("jumping");
+                    
                     currentState = playerState.air;
                 }
                 else
@@ -211,7 +217,7 @@ public class playerController : MonoBehaviour
                     {
                         // RB.velocity = new Vector3(RB.velocity.x, 0f, RB.velocity.z);
                         
-                        // Debug.Log(wall);
+                        
                         if (wallRunTimer <= 0)
                         {
                             RB.useGravity = true;
@@ -234,75 +240,11 @@ public class playerController : MonoBehaviour
                 }
                 
                 break;
-            // 
         }
 
-        // // player is on a wall, left or right
-        // // player is running
-        //     // player is sliding
-        //     // player is jumping
-        // // player is walking
-        //     // player is jumping
-        //     if (rightWall && wallRunTimer >= 0)
-        //     {
-        //         wallRunTimer -= Time.deltaTime;
-        //         moveSpeed = wallRunSpeed;
-        //         RB.useGravity = false;
-        //         RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Force);
-        //     }else if (leftWall && wallRunTimer >= 0)
-        //     {
-        //         wallRunTimer -= Time.deltaTime;
-        //         moveSpeed = wallRunSpeed;
-        //         RB.useGravity = false;
-        //         RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Force);
-        //     }else if(currentState == playerState.sprinting)
-        //     {
-        //         // if (sliding && slideTimer >= 0)
-        //         // {
-        //         //     moveSpeed = slideSpeed;
-        //         //     slideTimer -= Time.deltaTime;
-        //         //     transform.localScale = new Vector3(transform.localScale.x, startYScale*0.5f, transform.localScale.z);
-        //         // }
-        //         // else
-        //         // {
-        //         //     moveSpeed = sprintSpeed;
-        //         //     transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
-        //         // }
-        //     }else if (crouching)
-        //     {
-        //         moveSpeed = crouchSpeed;
-        //         transform.localScale = new Vector3(transform.localScale.x, startYScale*0.5f, transform.localScale.z);
-        //     }else if (currentState == playerState.walking)
-        //     {
-        //         moveSpeed = walkSpeed;
-        //     }
-        //
-        //     if (!rightWall && !leftWall || wallRunTimer <= 0)
-        //     {
-        //         RB.AddForce(playerVelocity.normalized * (moveSpeed * 5f), ForceMode.Force); 
-        //         RB.useGravity = true;
-        //     }
-        //
-        //     if (readyToJump)
-        //     {
-        //         if (rightWall)
-        //         {
-        //             WallJump();
-        //         }else if (leftWall)
-        //         {
-        //             WallJump();
-        //         }else
-        //         {
-        //             RB.AddForce(new Vector3(RB.velocity.x,jumpHeight, RB.velocity.z), ForceMode.Impulse);
-        //             readyToJump = false;
-        //         }
-        //     }
-        //
-        
-        
         if (RB.velocity.magnitude > moveSpeed)
         {
-            // Debug.Log(moveSpeed);
+            
             RB.velocity = Vector3.ClampMagnitude(RB.velocity, moveSpeed);
         }
     }
@@ -313,7 +255,7 @@ public class playerController : MonoBehaviour
             return false;
         if (Physics.Raycast(transform.position, Vector3.down, out slopeHit, 2))
         {
-            // Debug.Log(slopeHit.normal);
+            
             if (slopeHit.normal != Vector3.up)
             {
                 return true;
@@ -335,7 +277,7 @@ public class playerController : MonoBehaviour
         // our force to apply based on the wall 
         Vector3 forceToApply = wallNormal * 15 + transform.forward * 15 + Vector3.up * 20;
         
-        Debug.Log(forceToApply);
+        
 
         RB.velocity = new Vector3(RB.velocity.x, 0f, RB.velocity.z);
         RB.AddForce(forceToApply, ForceMode.Impulse);

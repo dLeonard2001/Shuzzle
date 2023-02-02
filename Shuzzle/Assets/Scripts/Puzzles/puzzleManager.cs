@@ -52,7 +52,7 @@ public class puzzleManager : MonoBehaviour
             if(blockCombination.Count == totalObjects) 
                 break;
             
-            int num = Random.Range(0, 9);
+            int num = Random.Range(0, 10);
             
             if (blockCombination.Contains(num))
             {
@@ -62,7 +62,7 @@ public class puzzleManager : MonoBehaviour
             if (!blockCombination.Contains(num))
             {
                 blockCombination.Add(num);
-                Debug.Log(num);
+                // Debug.Log(num);
             }
         }
     }
@@ -71,7 +71,7 @@ public class puzzleManager : MonoBehaviour
     {
         for (int i = 0; i < totalObjects; i++)
         {
-            Debug.Log("blockCombo" + blockCombination[i] + ": playerInput: " + playerInputCombination[i] );
+            // Debug.Log("blockCombo" + blockCombination[i] + ": playerInput: " + playerInputCombination[i] );
             if (blockCombination[i] == playerInputCombination[i])
             {
                 

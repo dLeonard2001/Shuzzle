@@ -89,7 +89,7 @@ Material:
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
-    - _DistanceFromPlayer: -15.583496
+    - _DistanceFromPlayer: 14.604919
     - _DstBlend: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
@@ -106,9 +106,13 @@ Material:
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
+    - _distanceFromPlayer: 11
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _Max_Dissolve_Distance: {r: 18, g: 24, b: 0, a: 0}
+    - _distanceFromPlayer: {r: -403.65454, g: 13.25071, b: -558.11176, a: 0}
+    - _playerPosition: {r: -397.85828, g: 11.720711, b: -550.24, a: 0}
   m_BuildTextureStacks: []
 --- !u!114 &131895693661251619
 MonoBehaviour:

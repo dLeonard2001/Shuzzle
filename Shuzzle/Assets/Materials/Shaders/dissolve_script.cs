@@ -6,20 +6,20 @@ public class dissolve_script : MonoBehaviour
 {
     public Transform player;
     private Material material;
-    public bool useSharedMaterial;
+    private Vector3 parentPosition;
 
     // Start is called before the first frame update
     void Start()
     {
-        if(useSharedMaterial)
-            material = GetComponent<MeshRenderer>().sharedMaterial;
-        else
-            material = GetComponent<MeshRenderer>().material;
+        material = GetComponent<MeshRenderer>().material;
+        
     }
 
     // Update is called once per frame
     void Update()
     {
-        material.SetFloat("_DistanceFromPlayer", player.position.magnitude - transform.position.magnitude);
+        // toFrom 
+        // from - to
+        material.SetFloat("_distanceFromPlayer", (player.position - transform.position).magnitude);
     }
 }
