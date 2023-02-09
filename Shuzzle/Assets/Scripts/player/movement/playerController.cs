@@ -306,4 +306,10 @@ public class playerController : MonoBehaviour
         gunZoom = zoomFOV;
         weaponEquipped = b;
     }
+
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        
+    }
 }
