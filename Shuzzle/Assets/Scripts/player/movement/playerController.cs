@@ -1,5 +1,6 @@
 using System;
 using Cinemachine;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Debug = UnityEngine.Debug;
@@ -92,6 +93,12 @@ public class playerController : MonoBehaviour
     private float startYScale;
 
     private bool pause;
+    
+    // Debugging 
+    private void OnDrawGizmos()
+    {
+             
+    }
 
     // setup
     private void Start()
@@ -148,7 +155,7 @@ public class playerController : MonoBehaviour
 
         onGround = Physics.Raycast(transform.position, Vector3.down, out groundHit, 
             1.25f, whatIsGround);
-
+        
         if (onGround)
         {
             wallRunTimer = maxWallRunTimer;
@@ -186,7 +193,7 @@ public class playerController : MonoBehaviour
                 if (readyToJump) // jump
                 {
                     moveSpeed = jumpHeight + sprintSpeed - walkSpeed;
-                    RB.AddForce(new Vector3(RB.velocity.x, jumpHeight, RB.velocity.z/2) * 2, ForceMode.Impulse);
+                    RB.AddForce(new Vector3(RB.velocity.x, jumpHeight, RB.velocity.z/2), ForceMode.Impulse);
                 
                     readyToJump = false;
                     
@@ -226,7 +233,7 @@ public class playerController : MonoBehaviour
                         else
                         {
                             RB.useGravity = false;
-                            moveSpeed = wallRunSpeed + sprintSpeed - walkSpeed;
+                            moveSpeed = wallRunSpeed;
                             wallRunTimer -= Time.deltaTime;
                         
                             RB.AddForce(playerVelocity * wallRunSpeed * 4.5f, ForceMode.Acceleration);
@@ -236,6 +243,7 @@ public class playerController : MonoBehaviour
                 else
                 {
                     RB.useGravity = true;
+                    moveSpeed = airSpeed;
                     RB.AddForce(playerVelocity * airSpeed + Vector3.down, ForceMode.Force);
                 }
                 
@@ -244,7 +252,6 @@ public class playerController : MonoBehaviour
 
         if (RB.velocity.magnitude > moveSpeed)
         {
-            
             RB.velocity = Vector3.ClampMagnitude(RB.velocity, moveSpeed);
         }
     }
@@ -295,11 +302,7 @@ public class playerController : MonoBehaviour
         }
     }
 
-    // Debugging 
-    private void OnDrawGizmos()
-    {
-        
-    }
+    
 
     public void setGunZoom(int zoomFOV, bool b)
     {
@@ -307,9 +310,5 @@ public class playerController : MonoBehaviour
         weaponEquipped = b;
     }
 
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        
-    }
+    
 }

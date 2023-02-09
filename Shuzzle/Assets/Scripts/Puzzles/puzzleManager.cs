@@ -1,9 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using DG.Tweening;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
@@ -11,25 +8,34 @@ using Random = UnityEngine.Random;
 public class puzzleManager : MonoBehaviour
 {
 
-    [Header("Puzzle 1")] 
+    [Header("Combination Puzzle")] 
     public List<Detector> detectorList;
     public List<GameObject> list;
     public List<int> blockCombination;
     private List<int> playerInputCombination;
     private int totalObjects;
 
+    private Hashtable combinationNums;
+
     private void Awake()
     {
         totalObjects = list.Count;
         playerInputCombination = new List<int>();
         blockCombination = new List<int>();
-        SetRandomBlockCombination();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
+        combinationNums = new Hashtable{
+            {1, "What day does the new year start on?"},
+            {2, "How many heads are better than one?"},
+            {3, "What is 33% in fraction form?"},
+            {4, "Is Independence day a national celebration in the USA?"},
+            {5, "What rhymes with Hive?"},
+            {6, "Nine, One, Five, Two, Three, Seven, Four, Eight"},
+            {7, "Sunday is my favorite Day"},
+            {8, "Who the fuck ate 9?"},
+            {9, "What is the German word for \"no\"?"},
+            {0, "Neither positive nor a negative number"}
+        };
         
+        SetRandomBlockCombination();
     }
 
     public void PlayerInput(int blockNum)
@@ -37,9 +43,7 @@ public class puzzleManager : MonoBehaviour
         if (playerInputCombination.Count != totalObjects)
         {
             playerInputCombination.Add(blockNum);
-        }
-
-        if (playerInputCombination.Count == totalObjects)
+        }else if (playerInputCombination.Count == totalObjects)
         {
             CheckPlayerCombination();
         }
@@ -102,21 +106,9 @@ public class puzzleManager : MonoBehaviour
 
     public String PuzzleHintCombinations(int i)
     {
-        Hashtable table = new Hashtable()
-        {
-            {1, "The new year starts on this day"},
-            {2, "... heads are better than one"},
-            {3, "33% can also be said as 1/..."},
-            {4, "4"},
-            {5, "5"},
-            {6, "6"},
-            {7, "7"},
-            {8, "8"},
-            {9, "9"},
-            {0, "0"}
-        };
+        
 
-        string str = (string) table[i];
+        string str = (string) combinationNums[i];
 
         return str;
     }
