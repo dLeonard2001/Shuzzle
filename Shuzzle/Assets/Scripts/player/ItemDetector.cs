@@ -9,7 +9,10 @@ using Vector3 = UnityEngine.Vector3;
 public class ItemDetector : MonoBehaviour
 {
     [Header("Item Pickup Config")]
-    [SerializeField] private float PickUpRange;
+    [SerializeField] 
+    private float PickUpRange;
+    [SerializeField] [Range(0.25f, 10f)] [Tooltip("0 is the weakness/slowest pull strength, 10 is the strongest/fastest pull strength")]
+    private float pullStrength;  
     [SerializeField] private short DetectionRadius;
     [SerializeField] private int MaxPickUpSize;
 
@@ -22,14 +25,16 @@ public class ItemDetector : MonoBehaviour
     {
         items = new Collider[MaxPickUpSize];
     }
-
-
+    
     private void Update()
     {
+        // clear out any items from before
         items = new Collider[MaxPickUpSize];
         
+        // check for items nearby
         Physics.OverlapSphereNonAlloc(transform.position, DetectionRadius, items, isItem);
         
+        // start pulling the items to the player
         MoveItemTowardsPlayer();
     }
 
@@ -46,29 +51,13 @@ public class ItemDetector : MonoBehaviour
 
             if (toPlayer.magnitude >= PickUpRange)
             {
-                coll.transform.position += new Vector3(toPlayer.x * Time.fixedDeltaTime, 0f, toPlayer.z * Time.fixedDeltaTime);
+                coll.transform.position += 
+                    new Vector3(toPlayer.x * pullStrength * Time.fixedDeltaTime, 0f, toPlayer.z * pullStrength *Time.fixedDeltaTime);
             }
             else
             {
                 Collect(coll);
             }
-        }
-
-        for (int i = 0; i < items.Length; i++)
-        {
-            if (items[i] == null) break;
-
-            toPlayer = transform.position - items[i].transform.position;
-
-            if (toPlayer.magnitude >= PickUpRange)
-            {
-                items[i].transform.position += new Vector3(toPlayer.x * Time.fixedDeltaTime, 0f, toPlayer.z * Time.fixedDeltaTime);
-            }
-            else
-            {
-                Collect(items[i]);
-            }
-
         }
     }
 
