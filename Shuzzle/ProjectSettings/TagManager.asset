@@ -12,11 +12,11 @@ TagManager:
   - Wall
   - death_trigger
   - weapon
-  - loot
   - kunai
   - grenade
   - loot_kunai
   - loot_grenade
+  - Loot
   layers:
   - Default
   - TransparentFX
@@ -36,8 +36,8 @@ TagManager:
   - player
   - point
   - Interactable
-  - 
-  - 
+  - isItem
+  - isGrenade
   - 
   - 
   - 

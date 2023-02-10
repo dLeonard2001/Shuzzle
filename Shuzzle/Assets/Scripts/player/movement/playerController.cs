@@ -11,8 +11,12 @@ using Vector3 = UnityEngine.Vector3;
 public class playerController : MonoBehaviour
 {
     // =============== Notes - To-Do =============
-        // 1. Change entire movement from CharacterController -> Rigidbody 
+        // Feb 09
+            // Adjust jump logic
+                // BUG: player LEAPS forward instead of gradually jumping forward
+            // Change data to serializefield and private instances
     // ===========================================
+    
     [Header("Player Speed")]
     public float walkSpeed;
     public float sprintSpeed;
