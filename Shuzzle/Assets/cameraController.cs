@@ -6,7 +6,7 @@ using UnityEngine;
 public class cameraController : MonoBehaviour
 {
     [Header("Look Sensitivity")]
-    [SerializeField] [Range(25, 100)]private float Sensitivity;
+    [SerializeField] [Range(10, 100)]private float Sensitivity;
     [SerializeField] private float fov;
     [SerializeField] private Transform player;
 
