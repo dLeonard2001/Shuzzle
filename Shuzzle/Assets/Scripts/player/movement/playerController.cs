@@ -2,6 +2,7 @@ using System;
 using Cinemachine;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
@@ -73,7 +74,6 @@ public class playerController : MonoBehaviour
     
     // Gameobject references
     [Header("References")]
-    public CinemachineVirtualCamera cam;
     public Camera mainCamera;
     public LayerMask whatIsGround;
     public LayerMask whatIsWall;
@@ -97,6 +97,8 @@ public class playerController : MonoBehaviour
     private float startYScale;
 
     private bool pause;
+
+    public UnityEvent camEvent;
     
     // Debugging 
     private void OnDrawGizmos()
@@ -117,7 +119,6 @@ public class playerController : MonoBehaviour
         maxSlideTimer = slideTimer;
         maxWallRunTimer = wallRunTimer;
         
-        cam.m_Lens.FieldOfView = startFOV;
         origin = transform.position;
         readyToJump = false;
     }
@@ -135,11 +136,11 @@ public class playerController : MonoBehaviour
 
         if (inputManager.AimDownSight() && weaponEquipped)
         {
-            cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, gunZoom, 20 * Time.deltaTime);
+            mainCamera.fieldOfView = Mathf.Lerp(mainCamera.fieldOfView, gunZoom, 20 * Time.deltaTime);
         }
         else
         {
-            cam.m_Lens.FieldOfView = Mathf.Lerp(cam.m_Lens.FieldOfView, startFOV, 20 * Time.deltaTime);
+            mainCamera.fieldOfView = Mathf.Lerp(mainCamera.fieldOfView, startFOV, 20 * Time.deltaTime);
         }
 
         rightWall = Physics.Raycast(playerCameraRoot.position, mainCamera.transform.right, 
@@ -177,9 +178,6 @@ public class playerController : MonoBehaviour
     {
         playerVelocity = transform.forward * movement.y + transform.right * movement.x;
 
-        // rotate the in fixedUpdate to remove jitter/rigid movement on objects
-        transform.rotation = Quaternion.Euler(0f, mainCamera.transform.eulerAngles.y, 0f);
-        
         // Shooting will be possibly whenever
         switch (currentState)
         {
@@ -214,6 +212,7 @@ public class playerController : MonoBehaviour
                 // wall Jump
                 if (rightWall || leftWall && wallRunTimer > 0) // able to wall run
                 {
+                    camEvent.Invoke();
                     Vector3 wallNormal = new Vector3();
                     if (rightWall)
                         wallNormal = rightWallHit.normal;
