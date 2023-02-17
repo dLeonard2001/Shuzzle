@@ -98,7 +98,7 @@ public class playerController : MonoBehaviour
 
     private bool pause;
 
-    public UnityEvent camEvent;
+    public static Action playerEvent;
     
     // Debugging 
     private void OnDrawGizmos()
@@ -212,7 +212,7 @@ public class playerController : MonoBehaviour
                 // wall Jump
                 if (rightWall || leftWall && wallRunTimer > 0) // able to wall run
                 {
-                    camEvent.Invoke();
+                    playerEvent?.Invoke();
                     Vector3 wallNormal = new Vector3();
                     if (rightWall)
                         wallNormal = rightWallHit.normal;

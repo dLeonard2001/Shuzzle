@@ -25,6 +25,8 @@ public class cameraController : MonoBehaviour
     private void Awake()
     {
         mainCam = GetComponent<Camera>();
+        
+        // playerController.playerEvent += rotate
     }
 
     // Start is called before the first frame update
@@ -52,12 +54,15 @@ public class cameraController : MonoBehaviour
         // rotates the player on the y-axis
         player.Rotate(Vector3.up * x);
     }
-
-    // TODO
-    public void RotateCameraOnWallRun(float num)
-    {
-        transform.localEulerAngles = Vector3.forward * num;
-    }
-
     
+    public void RotateCameraOnWallRun()
+    {
+        rotateTime += Time.deltaTime * 2f;
+        float t = rotateTime / rotateDuration;
+        
+        transform.localEulerAngles += Mathf.Lerp(transform.localEulerAngles.z, degrees, t) * Vector3.forward;
+    }
+    
+
+
 }
