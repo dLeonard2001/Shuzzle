@@ -1,32 +1,18 @@
 using System;
-using Cinemachine;
-using UnityEditor;
+using System.Collections;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.InputSystem;
-using Debug = UnityEngine.Debug;
-using Random = UnityEngine.Random;
-using Vector2 = UnityEngine.Vector2;
-using Vector3 = UnityEngine.Vector3;
 
 public class playerController : MonoBehaviour
 {
-    // =============== Notes - To-Do =============
-        // Feb 09
-            // Adjust jump logic
-                // BUG: player LEAPS forward instead of gradually jumping forward
-            // Change data to serializefield and private instances
-    // ===========================================
-    
     [Header("Player Speed")]
-    public float walkSpeed;
-    public float sprintSpeed;
-    public float airSpeed;
-    public float slideSpeed;
-    public float wallRunSpeed;
-    public float crouchSpeed;
-    public float jumpHeight;
-    public float wallJumpSpeed;
+    [SerializeField] private float walkSpeed;
+    [SerializeField] private float sprintSpeed;
+    [SerializeField] private float airSpeed;
+    [SerializeField] private float slideSpeed;
+    [SerializeField] private float wallRunSpeed;
+    [SerializeField] private float crouchSpeed;
+    [SerializeField] private float jumpHeight;
+    [SerializeField] private float wallJumpSpeed;
     private float lastDesiredMoveSpeed;
     private float playerSpeed; // desiredMoveSpeed
     private float moveSpeed;
@@ -56,29 +42,39 @@ public class playerController : MonoBehaviour
     
     // Use timers to signal when a player should stop doing something
     [Header("Timers")]
-    public float slideTimer;
+    [SerializeField] private float slideTimer;
     private float maxSlideTimer;
-    public float wallRunTimer;
+    [SerializeField] private float wallRunTimer;
     private float maxWallRunTimer;
 
     // Forces to use when on slopes
     [Header("Slope Forces")]
-    public float slopeForceRayLength = 1;
-    public float slopeForce;
+    [SerializeField] private float slopeForceRayLength = 1;
+    [SerializeField] private float slopeForce;
     
     // Variables used specifically for camera related events
-    [Header("Camera Settings")] 
-    public float startFOV;
-    public float maxFOV;
+    [Header("Camera Config")]
+    [SerializeField] [Range(10, 100)] private float LookSensitivity;
+    [SerializeField] private float camRotateDuration;
+    [SerializeField] private float camRotateDegrees;
+    [SerializeField] private float camRotateSpeed = 1.0f;
+    [SerializeField] private float fov;
+    [SerializeField] private float startFOV;
+    [SerializeField] private float maxFOV;
+    private Vector3 wallDirection;
+    private Vector2 camMovement;
+    private float yRotation;
+    private bool wall_cr_active;
+    private float camRotateTimer;
     private int gunZoom;
     
     // Gameobject references
     [Header("References")]
-    public Camera mainCamera;
-    public LayerMask whatIsGround;
-    public LayerMask whatIsWall;
-    public LayerMask whatIsClimbable;
-    public Transform playerCameraRoot;
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private LayerMask whatIsGround;
+    [SerializeField] private LayerMask whatIsWall;
+    [SerializeField] private LayerMask whatIsClimbable;
+    [SerializeField] private Transform playerCameraRoot;
     private Rigidbody RB;
     private InputManager inputManager;
 
@@ -93,17 +89,15 @@ public class playerController : MonoBehaviour
     private bool onGround;
     private bool readyToJump;
 
-    // Values to store the origin of transforms
-    private float startYScale;
-
     private bool pause;
 
-    public static Action playerEvent;
-    
     // Debugging 
     private void OnDrawGizmos()
     {
-             
+        Gizmos.DrawRay(transform.position, transform.right);
+        Gizmos.DrawRay(transform.position, -transform.right);
+        
+        Gizmos.DrawWireSphere(transform.position, 1.25f);
     }
 
     // setup
@@ -113,7 +107,6 @@ public class playerController : MonoBehaviour
         RB = GetComponent<Rigidbody>();
         inputManager = InputManager.instance();
         
-        startYScale = transform.localScale.y;
         currentState = playerState.ground;
         
         maxSlideTimer = slideTimer;
@@ -158,8 +151,7 @@ public class playerController : MonoBehaviour
                 out leftWallHit, 1, whatIsWall);
         }
 
-        onGround = Physics.Raycast(transform.position, Vector3.down, out groundHit, 
-            1.25f, whatIsGround);
+        onGround = Physics.CheckSphere(transform.position, 1.25f, whatIsGround);
         
         if (onGround)
         {
@@ -170,20 +162,36 @@ public class playerController : MonoBehaviour
         if (inputManager.PlayerJumped() && (onGround || rightWall || leftWall))
         {
             readyToJump = true;
+
+            
         }
-        
+
+        camMovement = inputManager.GetMouseDelta();
     }
 
     private void FixedUpdate()
     {
         playerVelocity = transform.forward * movement.y + transform.right * movement.x;
+        float x = camMovement.x * LookSensitivity * Time.deltaTime;
+        float y = camMovement.y * LookSensitivity * Time.deltaTime;
+        float t = camRotateTimer / camRotateDuration;
 
-        // Shooting will be possibly whenever
+        yRotation -= y;
+        yRotation = Mathf.Clamp(yRotation, -90, 90);
+        
+        mainCamera.transform.localEulerAngles = 
+            Vector3.right * yRotation + wallDirection * Mathf.Lerp(0, camRotateDegrees, Mathf.SmoothStep(0, 1, t));
+        
+        transform.Rotate(Vector3.up * x);
+
+        // Shooting will be possibly in any state
+        
         switch (currentState)
         {
             case playerState.ground:
                 // sprinting
                     // must sprint to slide OR have enough speed to slide
+
                 if (inputManager.Sprint())
                 {
                     moveSpeed = sprintSpeed;
@@ -194,8 +202,8 @@ public class playerController : MonoBehaviour
                 
                 if (readyToJump) // jump
                 {
-                    moveSpeed = jumpHeight + sprintSpeed - walkSpeed;
-                    RB.AddForce(new Vector3(RB.velocity.x, jumpHeight, RB.velocity.z/2), ForceMode.Impulse);
+                    moveSpeed = jumpHeight;
+                    RB.AddForce( moveSpeed * new Vector3(0f, jumpHeight, 0f).normalized, ForceMode.Impulse);
                 
                     readyToJump = false;
                     
@@ -203,7 +211,7 @@ public class playerController : MonoBehaviour
                 }
                 else
                 {
-                    RB.AddForce(playerVelocity * moveSpeed, ForceMode.Impulse);
+                    RB.AddForce(playerVelocity.normalized * moveSpeed, ForceMode.Impulse);
                 }
 
                 break;
@@ -212,22 +220,16 @@ public class playerController : MonoBehaviour
                 // wall Jump
                 if (rightWall || leftWall && wallRunTimer > 0) // able to wall run
                 {
-                    playerEvent?.Invoke();
-                    Vector3 wallNormal = new Vector3();
-                    if (rightWall)
-                        wallNormal = rightWallHit.normal;
-                    if (leftWall)
-                        wallNormal = leftWallHit.normal;
-                    
+                    camRotateTimer += Time.deltaTime * camRotateSpeed;
+
+                    wallDirection = rightWall ? Vector3.forward : -Vector3.forward;
+
                     if (readyToJump)
                     {
-                        WallJump(wallNormal);
+                        WallJump(rightWall ? rightWallHit.normal : leftWallHit.normal);
                     }
                     else
                     {
-                        // RB.velocity = new Vector3(RB.velocity.x, 0f, RB.velocity.z);
-                        
-                        
                         if (wallRunTimer <= 0)
                         {
                             RB.useGravity = true;
@@ -239,8 +241,8 @@ public class playerController : MonoBehaviour
                             moveSpeed = wallRunSpeed;
                             wallRunTimer -= Time.deltaTime;
                         
-                            RB.AddForce(playerVelocity * wallRunSpeed * 4.5f, ForceMode.Acceleration);
-                        } 
+                            RB.AddForce(playerVelocity.normalized * moveSpeed, ForceMode.Impulse);
+                        }
                     }
                 }
                 else
@@ -249,7 +251,7 @@ public class playerController : MonoBehaviour
                     moveSpeed = airSpeed;
                     RB.AddForce(playerVelocity * airSpeed + Vector3.down, ForceMode.Force);
                 }
-                
+
                 break;
         }
 
@@ -285,15 +287,14 @@ public class playerController : MonoBehaviour
         readyToJump = false;
         
         // our force to apply based on the wall 
-        Vector3 forceToApply = wallNormal * 15 + transform.forward * 15 + Vector3.up * 20;
+        Vector3 forceToApply = wallNormal * 20f + transform.forward * 25f + Vector3.up * 15f;
         
-        
-
-        RB.velocity = new Vector3(RB.velocity.x, 0f, RB.velocity.z);
         RB.AddForce(forceToApply, ForceMode.Impulse);
 
         // reset our wall run timer, ONLY if we jumped off of a wall
         wallRunTimer = maxWallRunTimer;
+
+        StartCoroutine(ResetCameraRotation());
     }
 
     private void OnTriggerEnter(Collider other)
@@ -305,8 +306,22 @@ public class playerController : MonoBehaviour
         }
     }
 
-    
+    private IEnumerator ResetCameraRotation()
+    {
+        wall_cr_active = true;
+        
+        while (camRotateTimer >= 0)
+        {
+            camRotateTimer -= Time.deltaTime * camRotateSpeed;
 
+            yield return null;
+        }
+
+        camRotateTimer = 0;
+        
+        wall_cr_active = false;
+    }
+    
     public void setGunZoom(int zoomFOV, bool b)
     {
         gunZoom = zoomFOV;
